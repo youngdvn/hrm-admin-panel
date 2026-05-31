@@ -8,9 +8,11 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { FormEvent, useState } from "react"
 import { toast } from "sonner"
+import { useAuthStore } from "@/app/stores/auth-store"
+import { login } from "@/lib/auth"
 
-const DEFAULT_EMAIL = "admin@hrm.local"
-const DEFAULT_PASSWORD = "123456"
+const DEFAULT_EMAIL = "emilys"
+const DEFAULT_PASSWORD = "emilyspass"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,21 +21,24 @@ export default function LoginPage() {
   const [username, setUsername] = useState(DEFAULT_EMAIL)
   const [password, setPassword] = useState(DEFAULT_PASSWORD)
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const setToken = useAuthStore((state) => state.setTokens)
 
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     try {
-      if (username === DEFAULT_EMAIL && password === DEFAULT_PASSWORD) {
-        document.cookie = "is_logged_in=true; path=/; max-age=86400; samesite=lax"
-        toast.success("Login successful.")
-        router.push(redirect)
-        router.refresh()
-        return
-      }
+      const payload = await login({
+        username, password
+      })
+      console.log(payload)
+      setToken(payload.accessToken, payload.refreshToken)
+      console.log("aaaa", useAuthStore.getState())
+      toast.success("Login Successfully")
+      router.push("/")
 
-      toast.error("Invalid username or password.")
-    } catch {
-      toast.error("An error occurred during login. Please try again.")
+    }
+    catch (err) {
+      toast.error("Invalid Payload")
+      console.log(err)
     }
   }
 
